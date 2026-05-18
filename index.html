@@ -33,3 +33,194 @@ input[type="number"] {
     width: 70px;
     text-align: center;
 }
+input[type="text"], input[type="tel"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+#celkem, #pocet {
+    text-align: center;
+    font-size: 22px;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #2a72d4;
+}
+button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 24px;
+    background: #ff6b35;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+button:hover {
+    background: #e85a28;
+}
+</style>
+</head>
+
+<body>
+
+<h1>SŠ Kostka – OBJEDNÁVKY BUFET</h1>
+
+<div class="container">
+
+    <div id="items"></div>
+
+    <div id="celkem">Celková cena: 0 Kč</div>
+    <div id="pocet">Počet kusů: 0</div>
+
+    <!-- ========================================= -->
+    <!-- NOVÁ POVINNÁ VSTUPNÍ POLE (JMÉNO + TELEFON) -->
+    <!-- ========================================= -->
+    <label>VAŠE JMÉNO (Příjmení Jméno):</label>
+    <input type="text" id="jmeno" placeholder="Novák Jan">
+
+    <label>TELEFON (zapisujte ve formátu +420 000 000 000):</label>
+    <input type="tel" id="telefon" placeholder="+420 123 456 789">
+
+    <!-- ========================================= -->
+
+    <button onclick="odeslatObjednavku()">ODESLAT OBJEDNÁVKU</button>
+
+</div>
+
+<script>
+
+let items = [];
+
+// ✅ načítání CSV
+async function loadCSV() {
+    try {
+        const response = await fetch("data_bufet.csv?t=" + Date.now());
+        const text = await response.text();
+        parseCSV(text);
+        renderItems();
+    } catch (err) {
+        alert("Chyba načítání CSV.");
+    }
+}
+
+// ✅ parsování CSV
+function parseCSV(text) {
+    items = [];
+    const lines = text.split("\n");
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const [nazev, cena] = line.split(";");
+
+        items.push({
+            nazev: nazev.trim(),
+            cena: parseFloat(cena.replace(",", ".")),
+            mnozstvi: 0
+        });
+    }
+}
+
+// ✅ vykreslení položek
+function renderItems() {
+    const container = document.getElementById("items");
+    container.innerHTML = "";
+
+    items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "item";
+
+        div.innerHTML = `
+            <span>${item.nazev} (${item.cena} Kč)</span>
+            <input type="number" min="0" value="0"
+            onchange="updateItem(${index}, this.value)">
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+// ✅ změna množství
+function updateItem(index, value) {
+    items[index].mnozstvi = parseInt(value) || 0;
+    updateSummary();
+}
+
+// ✅ přepočet
+function updateSummary() {
+    let celkem = 0;
+    let pocet = 0;
+
+    items.forEach(item => {
+        celkem += item.cena * item.mnozstvi;
+        pocet += item.mnozstvi;
+    });
+
+    document.getElementById("celkem").innerText =
+        "Celková cena: " + celkem.toFixed(2) + " Kč";
+
+    document.getElementById("pocet").innerText =
+        "Počet kusů: " + pocet;
+}
+
+// ✅ ODESLÁNÍ OBJEDNÁVKY + MAILTO
+function odeslatObjednavku() {
+
+    // VALIDACE FORMULÁŘE
+    const jmeno = document.getElementById("jmeno").value.trim();
+    const telefon = document.getElementById("telefon").value.trim();
+
+    if (!jmeno || !telefon) {
+        alert("Vyplňte prosím jméno a telefon.");
+        return;
+    }
+
+    let celkem = 0;
+    let pocet = 0;
+
+    const objednavka = items
+        .filter(item => item.mnozstvi > 0)
+        .map(item => {
+            const cena = item.mnozstvi * item.cena;
+            celkem += cena;
+            pocet += item.mnozstvi;
+            return `${item.nazev} - ${item.mnozstvi} ks - ${cena.toFixed(2)} Kč`;
+        });
+
+    if (objednavka.length === 0) {
+        alert("Nevybral jsi žádné položky!");
+        return;
+    }
+
+    // =========================================
+    // MAILTO – VYTVOŘENÍ A OTEVŘENÍ E-MAILU
+    // =========================================
+    const body =
+`Nová objednávka:
+
+Jméno: ${jmeno}
+Telefon: ${telefon}
+
+Objednávka:
+${objednavka.join("\n")}
+
+Počet kusů: ${pocet}
+Celková cena: ${celkem.toFixed(2)} Kč`;
+
+    const mailto =
+`mailto:machalek.roman@kostka-skola.cz?subject=${encodeURIComponent("Objednávka bufet")}&body=${encodeURIComponent(body)}`;
+
+    // Otevření e-mailového klienta
+    window.location.href = mailto;
+}
+
+// start
+loadCSV();
+
+</script>
+
+</body>
+</html>
