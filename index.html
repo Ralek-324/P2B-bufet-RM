@@ -33,22 +33,19 @@ input[type="number"] {
     text-align: center;
 }
 
-/* ✅ styling vstupů */
 .input-group {
     margin-top: 15px;
 }
 
 label {
     display: block;
-    font-size: 14px;
-    margin-bottom: 5px;
     font-weight: bold;
+    margin-bottom: 4px;
 }
 
 input[type="text"] {
     width: 100%;
     padding: 10px;
-    font-size: 16px;
 }
 
 #celkem, #pocet {
@@ -66,6 +63,7 @@ button {
     background: #ff6b35;
     color: white;
     border: none;
+    cursor: pointer;
 }
 </style>
 </head>
@@ -81,13 +79,13 @@ button {
     <div id="celkem">Celková cena: 0 Kč</div>
     <div id="pocet">Počet kusů: 0</div>
 
-    <!-- ✅ NOVÉ POLE – JMÉNO -->
+    <!-- ✅ JMÉNO -->
     <div class="input-group">
         <label for="jmeno">VAŠE JMÉNO (Příjmení Jméno)</label>
         <input type="text" id="jmeno" placeholder="Novák Jan">
     </div>
 
-    <!-- ✅ NOVÉ POLE – TELEFON -->
+    <!-- ✅ TELEFON -->
     <div class="input-group">
         <label for="telefon">TELEFON</label>
         <input type="text" id="telefon" placeholder="+420 000 000 000">
@@ -101,7 +99,6 @@ button {
 
 let items = [];
 
-// ✅ Načtení CSV
 async function loadCSV() {
     const res = await fetch("data_bufet.csv?t=" + Date.now());
     const text = await res.text();
@@ -109,7 +106,6 @@ async function loadCSV() {
     renderItems();
 }
 
-// ✅ Parsování CSV
 function parseCSV(text) {
     items = [];
     const lines = text.split("\n");
@@ -130,7 +126,6 @@ function parseCSV(text) {
     }
 }
 
-// ✅ Vykreslení položek
 function renderItems() {
     const container = document.getElementById("items");
     container.innerHTML = "";
@@ -146,13 +141,11 @@ function renderItems() {
     });
 }
 
-// ✅ Změna množství
 function updateItem(i, val) {
     items[i].mnozstvi = parseInt(val) || 0;
     updateSummary();
 }
 
-// ✅ Přepočet
 function updateSummary() {
     let celkem = 0;
     let pocet = 0;
@@ -169,13 +162,12 @@ function updateSummary() {
 }
 
 
-// ✅ HLAVNÍ FUNKCE – OPRAVENÉ MAILTO
+// ✅ HLAVNÍ OPRAVENÁ FUNKCE
 function odeslatObjednavku() {
 
     const jmeno = document.getElementById("jmeno").value.trim();
     const telefon = document.getElementById("telefon").value.trim();
 
-    // ✅ validace
     if (!jmeno) {
         alert("Vyplňte jméno");
         return;
@@ -202,28 +194,28 @@ function odeslatObjednavku() {
         return;
     }
 
-    // ✅ TĚLO EMAILU
-    const body = 
-`Objednávka z bufetu
+    // ✅ KRITICKÁ OPRAVA – správné zalomení (CRLF)
+    const body =
+"Objednávka z bufetu\r\n\r\n" +
+"Jméno: " + jmeno + "\r\n" +
+"Telefon: " + telefon + "\r\n\r\n" +
+"Položky:\r\n" +
+seznam.join("\r\n") +
+"\r\n\r\nCelkový počet kusů: " + pocet +
+"\r\nCelková cena: " + celkem + " Kč";
 
-Jméno: ${jmeno}
-Telefon: ${telefon}
-
-Položky:
-${seznam.join("\n")}
-
-Celkový počet kusů: ${pocet}
-Celková cena: ${celkem} Kč`;
-
-    // ✅ KRITICKÁ OPRAVA:
-    // vše v jednom řádku + encodeURIComponent
     const mailto =
-        "mailto:machalek.roman@kostka-skola.cz"
-        + "?subject=" + encodeURIComponent("Objednávka bufet")
-        + "&body=" + encodeURIComponent(body);
+        "mailto:machalek.roman@kostka-skola.cz" +
+        "?subject=" + encodeURIComponent("Objednávka bufet") +
+        "&body=" + encodeURIComponent(body);
 
-    // ✅ otevření klienta
-    window.location.href = mailto;
+    // ✅ místo location.href použij open (lepší kompatibilita)
+    const win = window.open(mailto);
+
+    // ✅ fallback (pokud blokováno)
+    if (!win) {
+        alert("Nepodařilo se otevřít e-mailového klienta. Zkontrolujte, zda máte nastavený výchozí e-mail.");
+    }
 }
 
 loadCSV();
@@ -232,3 +224,4 @@ loadCSV();
 
 </body>
 </html>
+``
