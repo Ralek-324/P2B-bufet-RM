@@ -6,7 +6,7 @@
 
 <style>
 body {
-    font-family: Arial, sans-serif;
+    font-family: Arial;
     background: #f4f7fb;
 }
 h1 {
@@ -16,46 +16,35 @@ h1 {
     padding: 20px;
 }
 .container {
-    width: 90%;
     max-width: 500px;
     margin: 30px auto;
     background: white;
-    padding: 25px;
-    border-radius: 12px;
+    padding: 20px;
 }
 .item {
     display: flex;
     justify-content: space-between;
-    margin: 12px 0;
+    margin: 10px 0;
 }
 input[type="number"] {
     width: 70px;
 }
-
 .input-group {
     margin-top: 15px;
 }
 label {
     font-weight: bold;
-    display: block;
 }
 input[type="text"] {
     width: 100%;
-    padding: 10px;
+    padding: 8px;
 }
-
-#celkem, #pocet {
-    text-align: center;
-    margin-top: 10px;
-    font-weight: bold;
-}
-
 button {
     width: 100%;
     padding: 15px;
     margin-top: 20px;
     font-size: 20px;
-    background: #ff6b35;
+    background: orange;
     color: white;
     border: none;
     cursor: pointer;
@@ -74,10 +63,9 @@ button {
 <div id="celkem">Celková cena: 0 Kč</div>
 <div id="pocet">Počet kusů: 0</div>
 
-<!-- ✅ POLE -->
 <div class="input-group">
 <label>VAŠE JMÉNO (Příjmení Jméno)</label>
-<input type="text" id="jmeno" placeholder="Novák Jan">
+<input type="text" id="jmeno">
 </div>
 
 <div class="input-group">
@@ -85,7 +73,10 @@ button {
 <input type="text" id="telefon" placeholder="+420 000 000 000">
 </div>
 
-<button onclick="odeslatObjednavku()">ODESLAT OBJEDNÁVKU</button>
+<!-- ✅ KLÍČOVÉ: button uvnitř anchor -->
+<a id="mailLink" href="#">
+<button onclick="return pripravMail()">ODESLAT OBJEDNÁVKU</button>
+</a>
 
 </div>
 
@@ -127,7 +118,7 @@ function renderItems() {
         <div class="item">
             <span>${item.nazev} (${item.cena} Kč)</span>
             <input type="number" min="0"
-                onchange="updateItem(${i}, this.value)">
+            onchange="updateItem(${i}, this.value)">
         </div>`;
     });
 }
@@ -153,20 +144,20 @@ function updateSummary() {
 }
 
 
-// ✅ ✅ KRITICKÁ OPRAVA (anchor hack)
-function odeslatObjednavku() {
+// ✅ EDGE KOMPATIBILNÍ ŘEŠENÍ
+function pripravMail() {
 
     const jmeno = document.getElementById("jmeno").value.trim();
     const telefon = document.getElementById("telefon").value.trim();
 
     if (!jmeno) {
         alert("Vyplňte jméno");
-        return;
+        return false;
     }
 
     if (!telefon) {
         alert("Vyplňte telefon");
-        return;
+        return false;
     }
 
     let celkem = 0;
@@ -182,39 +173,13 @@ function odeslatObjednavku() {
 
     if (seznam.length === 0) {
         alert("Nevybrány položky");
-        return;
+        return false;
     }
 
     const body =
-`Objednávka z bufetu
-
-Jméno: ${jmeno}
-Telefon: ${telefon}
-
-Položky:
-${seznam.join("\n")}
-
-Celkem kusů: ${pocet}
-Celková cena: ${celkem} Kč`;
-
-    const mailto =
-        "mailto:machalek.roman@kostka-skola.cz" +
-        "?subject=" + encodeURIComponent("Objednávka bufet") +
-        "&body=" + encodeURIComponent(body);
-
-    // ✅ KLÍČOVÁ OPRAVA – vytvoření <a> a kliknutí
-    const a = document.createElement("a");
-    a.href = mailto;
-    a.style.display = "none";
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-loadCSV();
-
-</script>
-
-</body>
-</html>
+"Objednávka z bufetu\n\n" +
+"Jméno: " + jmeno + "\n" +
+"Telefon: " + telefon + "\n\n" +
+"Položky:\n" +
+seznam.join("\n") +
+"\n\nCelkem kusů: " + pocet +
